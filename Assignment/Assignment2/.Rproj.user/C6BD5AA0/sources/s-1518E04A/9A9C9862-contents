@@ -1,0 +1,90 @@
+
+
+setwd("/Users/roopak/Documents/Monash/Semester-2/modelling/Assignment/Assignment2_files")
+train <- read.csv("indian_liver_patient_train.csv", header=TRUE, sep=",")
+test <- read.csv("indian_liver_patient_test.csv", header = TRUE, sep = ",")
+summary(train)
+
+# Some the of the column has null value - Albumin_and_Globulin_Ratio
+# Dataset target values should be either 0 or 1
+typeof(il$Dataset <- il$Dataset - 1)
+head(il)
+
+il$Dataset
+
+# Correction of last column
+train$Dataset <- train$Dataset - 1
+
+l <- train$Dataset
+
+fit <- glm(Dataset ~ ., family=binomial, data=train)
+
+p <- predict(fit, type="response")
+
+length(p)
+age <- train$Age[1:(length(train$Age)-4)]
+
+
+###################### Plotting Logistic regression #########################
+
+x <- seq(0:394)
+y1 <- train$Dataset[1:(length(train$Dataset)-4)]
+y2 <- p
+df <- data.frame(x,y1,y2)
+ggplot(df, aes(x)) +                    # basic graphical object
+  geom_point(aes(y=y1), colour="red") +  # first layer
+  geom_point(aes(y=y2), colour="green")
+
+#############################################################################
+
+typeof(names(train))
+
+fit <- lm(train$Total_Proteins ~ , data=train)
+summary(fit)
+names(sum.fit)
+
+
+
+predict.total_protien <- predict(fit, type="response")
+
+curve(predict(fit,data.frame(train$Age=x),type="resp"),add=TRUE)
+
+
+x <- seq(0:394)
+y1 <- train$Total_Proteins[1:(length(train$Total_Proteins)-4)]
+y2 <- predict.total_protien
+df <- data.frame(x,y1,y2)
+ggplot(df, aes(y1, y2)) +                    # basic graphical object
+  geom_point(aes(y1), colour="red")  # first layer
+
+
+names()
+sum.fit = summary(fit)
+
+attr(coef(sum.fit), "dimnames")[[2]]
+coef(sum.fit)["Age",4]
+
+ summary(pld)
+
+predict.Total_Proteins <- predict(fit, type="response")
+?rep()
+?dpois()
+
+
+x <- c(2,1,4,2)
+
+dpois(2, 1, log = FALSE)
+
+cor(train$Total_Proteins, train$Albumin)
+cor(train$Total_Proteins, train$Total_Bilirubin)
+
+
+
+glass <- read.csv('https://archive.ics.uci.edu/ml/machine-learning-databases/glass/glass.data', header = FALSE)
+names(glass) = c('ID','Ri','Na','Mg','Al','Si','K','Ca','Ba','Fe','type')
+glass$type[glass$type<4] <- 0 # window glasses
+glass$type[glass$type>3] <- 1 # other kind of glasses
+glass <- glass[ , -1] # drop unnecessary  columns
+logistic <- glm(type ~ Al, glass, family = binomial)
+
+head(glass)

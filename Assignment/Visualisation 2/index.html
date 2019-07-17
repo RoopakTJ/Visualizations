@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src = "https://d3js.org/d3.v4.min.js"></script>     
+    <script type="text/javascript" src="index.js"></script>
+
+    <script src="http://d3js.org/queue.v1.min.js"></script>
+    <script src="//maps.google.com/maps/api/js?key=AIzaSyCnivOVLzndNYjjYqPJMo2_SiNzU1ViVqk"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+
+    <title>D3 Project</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+</head>
+<body> 
+
+<nav class="navbar navbar-inverse">
+        <div class="container-fluid">
+            <div class="navbar-header">
+            <a class="navbar-brand" href="#">Lokh Sabha Elections</a>
+            </div>
+            <ul class="nav navbar-nav">
+            <li class="active"><a href="#">Home</a></li>
+            <li><a href = "https://roopaktj.github.io/portfolio/">About</a></li>
+            </ul>
+        </div>
+        </nav>
+        
+<div class="jumbotron text-center">
+    <style>
+        body {
+        background-color:grey      
+        }
+    </style>
+    <h1>Lokh Sabha Elections India 2019</h1>
+    <p>Sentiment Analysis on the twitter data</p> 
+  </div>
+
+<div class="container-fluid bg-3 text-center">
+    <h2 style="color:black; font-size: 45px">Congress vs BJP</h2>
+    <img src="image.jpg" class="img-circle" alt="Election">
+    <br>
+    <br>
+    <br>
+    <br>
+    <p style="color: black; font-size: 25px">Democracy is understood to be a political system which affords voice to every
+        participating citizen. Hence, every democratic exercise is formulated to efficiently transmit
+        citizens opinion without misrepresentations. Lok Sabha election is one such democratic
+        exercise, where in millions of citizens cast votes to influence their collective political
+        future. Being the largest democracy in the world Lok Sabha elections demands
+        unprecedented importance. Lok Sabha elections conducted in every five years to elect the
+        lower house members know as Member of Parliament (MP). Candidates contest in
+        elections from their respective constituencies and every adult citizen can cast vote in their
+        constituency.
+        The 17th Lok Sabha elections are being conducted in India from 11 April 2019 to 19
+        May 2019. Currently ruling NDA government and the UPA headed by Indian National
+        Congress are the main competitors in the 2019 elections.</p>
+</div>
+
+
+<div class="container-fluid bg-3 text-center">
+        <h2 style="color: black; font-size: 45px">Histogram Comparison</h2>
+        </div>  
+
+<svg width="1500" height="100" id="1" class="hist_selec">
+</svg>
+
+<svg width="1500" height="500" class="hist">
+        <g>
+        <rect x="200" y="10" width="1000" height="500" fill="gray"></rect>
+        </g>  
+    </svg>
+
+    <div class="container-fluid bg-3 text-center">
+        <p style="color: black; font-size: 25px">The above two histograms, shows the count of Sentiments for each category in general per 1000 tweets.
+        Sentiments have been categorised into 5 buckets namely Highly Positive, Positive, Neutral, Negative and Highly Negative based on the polarity value obtained after the sentiment analysis</p>
+    </div>
+
+<div class="container-fluid bg-3 text-center">
+        <h2 style="color: black; font-size: 45px">India Map Comparison</h2>
+        </div>  
+
+<svg width="1500" height="100" id="1" class="india_select">
+</svg>
+<svg width="1500" height="500" class="india">
+        <g>
+        <rect x="200" y="10" width="1000" height="500" fill="gray"></rect>
+        </g>  
+        </svg>
+
+
+<div class="container-fluid bg-3 text-center">
+        <h2 style="color: black; font-size: 45px">Word Cloud Comparison</h2>
+        </div> 
+
+<svg width="1500" height="100" id="1" class="cloud_select">
+</svg>
+
+<svg width="1500" height="500" class="cloud">
+        <g>
+        <rect x="200" y="10" width="1000" height="500" fill="gray"></rect>
+        </g>  
+    </svg>
+
+<div class="container-fluid bg-3 text-center">
+<p style="color: black; font-size: 25px">Tweets were converted into tokens and using Natural Language Processing nltk python packages, top keywords were identified. For this process stop words were also removed and a keyword vocabulary was formed for each party. WordCloud representation using Python WordCloud package can be used to find what keywords Twitter users have identified which was focussed by each of the party.</p>
+</div>
+
+
+<div class="container-fluid bg-3 text-center">
+        <h2 style="color: black; font-size: 45px">Online impressions(Retweet Comparison)</h2>
+        </div>  
+
+<svg width="1500" height="100" id="1" class="bubble_select">
+</svg>
+<svg width="1500" height="500" class="impression">
+        <g>
+        <rect x="200" y="10" width="1000" height="500" fill="gray"></rect>
+        </g>  
+    </svg>
+
+<div class="container-fluid bg-3 text-center">
+<p style="color: black; font-size: 25px"> Retweets, favourites and shares are effective measure of Twitter engagement by determining the interests and preferences among the users. It was researched that tweets with one retweet get at least one more retweet 43% of the time. This ensures more reach towards public and can help in the public relations of the Party. On Twitter, metrics such as favourites speak volumes to engagement with followers. In the column “retweet” we have combined both retweet and favourites count so that the overall “twitter impressions” can be identified.
+        The bubble chart shows the quantity of Positive, Negative, Highly Positive, Highly Negative and Neutral retweets that each of the side had in 1000 tweets </p>
+</div>
+
+<div class="container-fluid bg-3 text-center">
+        <h2 style="color: black; font-size: 45px">Density Plot for the Sentiments</h2>
+        </div>  
+
+<svg width="1500" height="100" id="1" class="density_select">
+</svg>
+<svg width="1500" height="500" class="density">
+        <g>
+        <rect x="200" y="10" width="1000" height="500" fill="gray"></rect>
+        </g>  
+    </svg>
+
+    <div class="container-fluid bg-3 text-center">
+        <p style="color: black; font-size: 25px"> Density Plot visualises the distribution of data over a continuous interval or time period. 
+                The peaks of a Density Plot help display where values are concentrated over the interval </p>
+        </div>
+
+</body>
+
+</html>

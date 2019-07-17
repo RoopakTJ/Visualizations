@@ -1,0 +1,773 @@
+---
+title: 'FIT5197 : Modelling for data analysis'
+author: 'Roopak Thiyyathuparambil Jayachandran  |  Student ID: 29567467'
+output:
+  html_document:
+    theme: cerulean
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+suppressWarnings(TRUE)
+```
+<center> <h1>Assignment - 2 </h1> </center>
+
+
+## 2 Hypothesis testing
+
+Spike data given as
+
+```{r}
+spikes <- c(0.220136914, 1.252061356, 0.943525370, 0.907732787, 1.157388806, 0.342485956,
+0.291760012, 0.556866189, 0.738992636, 0.690779640, 0.425849738, 0.876344116,
+1.248761245, 0.697514552, 0.174445203, 1.376500202, 0.731507303, 0.483036515,
+0.650835440, 1.106788259, 0.587840538, 0.978983532, 1.179754064, 0.941462421,
+0.749840071, 0.005994156, 0.664525928, 0.816033621, 0.483828371, 0.524253461)
+```
+
+Testing has to be done to check if the hypothesis that the spike distribution is Weibull with shape = 2.5 and scale = 1.0
+
+$ H0 : spikes ~ Weibull(shape=2.5, scale=1.0) $
+
+### 2.1 Generation:
+Function to be generated :
+ * Generator() : Generate a sample of 30 spikes having Weibull distribution shape = 2.5 and scale = 1.0
+ * loglikelihood(datavec) : Takes the vector as argument and returns its log likelihood under H0.
+ 
+```{r}
+generator <- function(n, shape, scale){
+  # Using rweibull function and pass the arguments
+  rweibull(n = n, shape = shape, scale = scale)
+}
+generator(30, 2.5, 1.0)
+```
+ 
+```{r}
+loglikelihood <- function(vector, shape, scale){
+  # Using dweibull function and pass the arguments
+  v <- dweibull(x = vector, shape = shape, scale = scale, log = TRUE )
+  ll <- sum(v)
+}
+
+# Checking the loglikelihood for spikes value. Passign spikes vector to loglikelihood function
+log.likelihood <- loglikelihood(spikes, 2.5, 1.0)
+log.likelihood
+```
+ 
+For spikes value, we get log likelihood -6.788418
+
+### 2.2 Confidence in sampling:
+
+H0 : spikes ~ Weibull(shape=2.5, scale=1.0)
+To reject the null hypothesis, more than 90% of calls to loglikelihood(generator()) should return a
+value greater than loglikelihood(spikes). 
+Suppose the value greater than loglikelihood(spikes) be 1 and less than be 0. So for n = 10 samples, we may get a vector like:
+0, 1, 0, 0 ,1 , 0 ,1, 0, 0 ,0 , 0
+Here we can consider the occurence of 1 as 0 (theta). So, 0 = (Number of 1)/(Size of N)
+0 = 1/n sigma(xi)
+
+In this case the value will be 3/10
+
+For 95% confidence interval for 0, using central limit theorem is derived as :
+Formula here
+
+$ (\theta - 1.96\sqrt{\frac{\theta(1 - \theta)}{n}}, \theta + 1.96\sqrt{\frac{\theta(1 - \theta)}{n}}) $
+
+A sample has to be generated and for each sample we have generate the boundary values of confidence.
+
+Once it is sure with number of samples that 90% is totally outside the 95% boundary , just take that sample and check for log(generator) > log (spikes) if this is greater than 0.9 hypothesis is rejected otherwise that is not rejected
+
+### 2.3 Hypothesis Testing
+
+```{r}
+# Writing a function which will input the number n. Loop will be iterated n times and we will get true value when log(generator) > log (spikes). Pass that value to binom.test function and returns the p-value
+ninty.five.ci <- function(n){
+  ll.spikes <- loglikelihood(spikes, 2.5, 1.0) # Log likelihood of spikes
+  true.count = 0 # Count for true values
+  for(i in 1:n){
+  a <- generator(30, 2.5, 1.0) 
+  b <- loglikelihood(a, 2.5, 1.0)
+  if(b > ll.spikes){
+    true.count = true.count + 1 
+  }
+  }
+  
+  c <- binom.test(true.count, n, conf.level = 0.90)
+  c$p.val
+}
+
+```
+
+
+Creating an empty list to store values in the count of 1:1000 where p > 0.05. This is done 10 times to get the frequecy list
+
+```{r}
+
+n.value <- c()
+
+for(i in 1:10){
+for(i in 1:1000){
+  
+  if(ninty.five.ci(i) > 0.05){
+    n.value <- c(n.value, i)
+  }
+}}
+```
+
+Histogram is plotted for the frequency list get the estimate for the value of n
+
+```{r}
+library(ggplot2)    
+ggplot() + aes(n.value)+ geom_histogram(binwidth=1, colour="green", fill="white") + theme_dark()
+```
+
+Since for 10 times (1000 times iteration) of binom test we got the above frequency where p > 0.10 for each of these above plotted n-value. so above n = 50 we will never get p-value greater than 0.10.
+
+## 3 Logistic Regression
+
+Patient with liver diseases have increased in an exponential manner due to consumption of alchocol and certain other food items likes pickles, drugs, contaminated food etc.
+The task deals with exploration of Indian Liver Patient Dataset from Kagle. This will enable prediction of certain attributes which will reduce the burden on doctors and assist them with the diagnosis process.
+
+Given datasets:
+ * Training data : Indian Liver Patient train (csv) File
+ * Testing data : Indian Liver Patient test (csv)
+
+### 3.1 Loading the data
+
+Importing the dataset, training data -> il and test data -> ilt
+
+```{r}
+il <- read.csv("indian_liver_patient_train.csv", header=TRUE, sep=",")
+ilt <- read.csv("indian_liver_patient_test.csv", header = TRUE, sep = ",")
+```
+
+Checking the structure of the data (training) using str function.This function will return the internal structure of the dataframe including datatypes, levels etc
+
+```{r}
+str(il)
+```
+
+Printing the summary of training data (il). This function summarises column with its statistics
+
+```{r}
+summary(il)
+```
+
+When we call the  summary function for dataframe, we get the min, max, quartile ranges, mean, median etc. We can also notice that most of the columns have numerical data.
+
+
+### Issues in the data
+
+ * It is noticed that Dataset is the target variable which tells if the record has Liver disease or not. Checking the unique values in Dataset columns, it is noticed that it has 2 values 1 and 2. While considering this column for logistic regression it can give error since for the target variable in logistic regression should be either 0 or 1.
+
+Fixing the issue. Replacing 2 value with 0 as it can be interpretted that during data insertion, 0 was wrongle inserted as 2
+
+```{r}
+# If Dataset has value 2, replace it with 0
+il$Dataset[il$Dataset == 2] <- 0
+# Performing the task in testing data as well
+ilt$Dataset[ilt$Dataset == 2] <- 0
+# Checking unique values again 
+unique(il$Dataset)
+```
+
+ * On checking for null values in other features, we can see that there are some null values in the rows. This will not give any error while applying glm() function since the function internally handles the null rows by removing the row while in execution. But other than deleting the null value, we can select any of the following approach to handle null value.
+
+Solutions:
+
+ * Deleting the rows with null values
+ * Mean impute the missing values
+ * Impute the value based on regression techniques.
+
+After applying any of the above approach, we can check the distribution or mean statistics to verify that the impute was proper.
+
+But in the given dataset, since we have just got 4 rows( out of 400 ) with null value, removing these rows will be an ideal approach.
+
+Fix :
+
+```{r}
+# Cheking the count of all null values
+sum(is.na(il))
+# Remove missing records
+il <- na.omit(il)
+```
+```{r}
+# Cheking the count of all null values for testing data
+sum(is.na(ilt))
+```
+We can see that there are no null values for testing data
+
+### 3.2 Running glm() on the data
+
+Considering the target variable for logistic regression as Dataset.
+
+```{r}
+# Logistic regression for training data considering all data except the dataset column.
+fit1 <- glm(il$Dataset ~ ., family = binomial, data = il)
+# Checking the summary for the fit
+summary(fit1)
+```
+
+The summary function for the glm model object returns Deviance Residuals, Coefficients, AIC value etc.
+
+Deviance Residual gives the information on how deviated the truth value is from the predicted value. We also get information of min, max, 1st quartile and 3rd quartlie ranges for the residuals. Since the median value is near to 0 ,i.e, 0.4 we can say that residual is normally distributed around 0. 1Q = -1.0213 and 3Q = 0.8796. Since the range 3Q - 1Q is very less the ditribution is nearly symmetrical as well. 
+
+Second part of the summary returns coefficients which have 5 columns.
+  * Column name : Names of all the columns
+  * Estimated coefficients : This column represents the intercept of the regression line (B0)
+  * Z value : z score value used to calculate p-value
+  * Pr(>|z|) : Pr value represent the probability for which the null hypothesis is true. This is used as an alternative of rejection points for the smallest level of significance.In the given summary lowest p values are present for Age, Total_Protiens, Albumin and Albumin_and_Globulin_Ratio. So these features will be significant for the selection of Dataset column
+  * last column is the visualization of the importance of a variable. 3 * with high importance followed by 2 and 1.
+
+  * AIC: An estimator of the relative quality of statistical models for a given set of data. Less is the AIC value, better is the model. Can be also used as a criteria for feature selection.
+
+### 3.3 Comparing predictions
+
+```{r}
+pld1 <- predict(fit1, type="response")
+```
+
+After fitting the model using logistic regression glm() function, we can use that returned object to predict values for all the rows of training dataset.
+
+Plotting Truth data vs Predicted data, we can see that truth data has values 0 and 1(green), where as predicted values have values between 0 and 1(red). In the first plot these are plotted for each record to see the difference. 
+It can be seen from the plot that we have more values with truth values 1 than truth value 0. So in the predicted values, the values are clustered towards upper half, i.e, greater than 0.5
+
+```{r}
+library(ggplot2)
+# Creating a temporary dataframe for plotting
+x <- seq(0:394)
+y1 <- pld1 # Predicted values
+y2 <- il$Dataset # Truth values
+df <- data.frame(x,y1,y2)
+ggplot(df, aes(x)) +                    
+  geom_point(aes(y=y1), colour="yellow") +  
+  geom_point(aes(y=y2), colour="green") +
+  xlab("Indian Liver patient records - training") +
+  ylab("Category value") +
+  ggtitle("Truth vs Predicted") + 
+  theme_dark()
+```
+In the second plot, we are plotting truth value(x-axis) against predicted value(y-axis)
+
+```{r}
+library(ggplot2)
+# Creating a temporary dataframe for plotting
+y1 <- pld1
+y2 <- il$Dataset
+df <- data.frame(y1,y2)
+ggplot(df, aes(y2)) +                    
+  geom_point(aes(y=y1), colour="red") +
+  xlab("Truth Value") +
+  ylab("Predicted value") +
+  ggtitle("Truth vs Predicted") +
+  theme_dark()
+  
+```
+It can be seen that values are more towards 0 and 1 (both the extreme corners). We can see that many places we have wrongly predicted the truth value as in x=0 we have many y > 0.5 and for x = 1 we have many y < 0.5 
+
+### 3.4 Stepwise Regression with backwards selections
+
+Stepwise regression with backward selection is a technique in which choice of predictive features is carried out by automatic procedure comparing certain criteria of diagnostics like p-value or AIC.
+
+The following code is an implementation of step function (Function in R which is used for the above mentioned purpose) in which we start with the complete model.
+Since complete model is not just all the predictive features, we can also consider inter dependency of features like a + b or ab etc. So the full model will consider all possibilities.
+In out implementation we will only consider all the columns in the dataset for the inital model.
+Since the function is the implementation of step function, we can first try to execute set function with our inital model to get an estimate. In step function we have to pass the direction as backward for "backward selection"
+
+```{r}
+fit1 <- glm(il$Dataset ~ ., family = binomial, data = il)
+step(fit1, direction = "backward")
+```
+
+Algorithm for implementation of backward step function:
+
+  * Start with the complete model (with all the columns)
+  * Set an initial threshold of p-value
+  * Start a loop and iterate through each of the p-value.
+  * Find the maximum p-value and variable corressponding to that value
+  * return the var name and remove that from the model.
+  * Continue till we get a STOP or all features are removed
+  * Finally we will get a model with only those values having very less p-value
+  
+Here we consider p-value for selection because: p - value is the ideal option for selective regression.
+
+Why alpha = 0.05. 0.05 is the standard p-value which is used as critical p-value On checking the summary we can see that only some of the features have value less than 0.05. A small p-value (typically ≤ 0.05) indicates strong evidence against the null hypothesis, so you reject the null hypothesis.
+
+SelectVar function modified to perform backward regression:
+
+```{r}
+selectVar <- function(fset,fit,sumfit) {
+maxscore = 0.05 # Critical p-value acting as initial threshold
+maxfeat = "STOP"
+# loop through coefficients
+for ( var in attr(coef(sumfit),"dimnames")[[1]] ) { # Iterating through all the columns
+  if ( startsWith(var,"(Inter") ) { # Additional column added in summary which is not needed for analysis
+  # but ignore the intercept
+  next
+  }
+  fval = coef(sumfit)[var, 4] # Storing the p-value
+  if ( fval > maxscore ) { # Checking if p-value is greater than greatest
+  # save best score so far
+  maxscore = fval # Storing the relativelty highest p-value 
+  maxfeat = var
+}
+}
+  if ( startsWith(maxfeat,"Gender") ) {
+  # Gender is a factor, so its coefficient name is different
+  maxfeat = "Gender"
+  }
+# at this stage, if no feature had a score beating the initialisation,
+# then chosen feature will be "STOP"
+print(paste("Removing ",maxfeat," with value ",maxscore))
+return(maxfeat)
+}
+  
+```
+
+
+Starting a loop and calling the selectVar function in each iteration.
+
+```{r}
+# this is the active predictor list
+nil <- names(il)
+# delete the target variables from it
+nil <- nil[(!nil=="Dataset")]
+print(paste("STARTING: ", paste(nil,collapse="+")))
+# run with initial list
+fit <- glm(paste("Dataset ~ ",paste(nil,collapse="+")), data=il)
+sum.fit <- summary(fit)
+
+for (loop in 1:10) {
+  if ( length(nil) == 0) {
+  # removed everything so quit
+  break
+  }
+  # var is to be tested
+  var <- selectVar(nil, fit, sum.fit)
+  if ( var == "STOP") {
+  break
+  }
+  # remove from list
+  nil <- nil[!nil==var]
+  print(paste("REMOVED: ", var))
+  # report
+  print(paste("RUNNING: ", paste(nil,collapse="+")))
+  # now run with modified list
+  fit <- glm(paste("Dataset ~ ",paste(nil,collapse="+")), family = binomial, data=il)
+  sum.fit <- summary(fit)
+  
+  # do something, print some metric, but what?
+  print(paste("GLM out: ", sum.fit$df.residual))
+}
+# report the final fit
+pld2 <- predict(fit, type="response")
+summary(fit)
+
+```
+
+### 3.5 Discussion
+
+Columns in the initial fit data
+
+```{r}
+# Old model
+attr(coef(summary(fit1)),"dimnames")[[1]]
+```
+Columns in the final fit after backward regression
+
+```{r}
+# New model
+attr(coef(summary(fit)),"dimnames")[[1]]
+```
+
+On taking the summary of the final fit we can see that only features with very less p-value has been selected.
+
+```{r}
+summary(fit)
+```
+
+Residual median value is more closer to 0 value so the distribution of residuals follow a normal distribution
+Again plotting the truth vs predicted for the new model
+
+```{r}
+x <- seq(0:394)
+y1 <- pld2
+y2 <- il$Dataset
+df <- data.frame(x,y1,y2)
+ggplot(df, aes(x)) +                    
+  geom_point(aes(y=y1), colour="red") +  
+  geom_point(aes(y=y2), colour="green") +
+  xlab("Indian Liver patient records - training") +
+  ylab("Category value") +
+  ggtitle("Truth vs Predicted") +
+  theme_dark()
+
+```
+
+
+Reading the test data and checking the resultant model on test data. We have already imported test data as "ilt".
+
+```{r}
+# general function for this
+ilt$Dataset[ilt$Dataset == 2] <- 0
+pld_old <- predict(fit1, ilt, type="response")
+pld_new <- predict(fit, ilt, type = "response")
+```
+
+Creating confusion matrix of test data for both models (old and new)
+
+```{r}
+confusion.matrix1 <- as.matrix(table('Actual'=ilt$Dataset, 'Prediction'=round(pld_old))) # Old model
+confusion.matrix1
+```
+
+```{r}
+confusion.matrix2 <- as.matrix(table('Actual'=ilt$Dataset, 'Prediction'=round(pld_new))) # New model
+confusion.matrix2
+```
+
+  * Sensitivity: Sensitivity is the ability of a test to correctly identify those with the disease (true positive rate)
+  * Specificity: Specificity is the ability of the test to correctly identify those without the disease (true negative rate).
+  * Accuracy: Accuracy represents the proportion of true positive results (both true positive and true negative) in the selected population.
+  * Root Mean Squared Error: RMSE is a measure of how spread out these residuals are. Deviation of the error
+
+```{r}
+# define the reporter function; copied from the R file on Moodle
+negative.log.likelihood <- function(prob, target){
+classes = levels(target)
+prob[target==classes[1]] = 1 - prob[target==classes[1]]
+prob = (prob+1e-10)/(1+2e-10)
+-sum(log(prob))
+}
+```
+
+
+
+```{r}
+library(Metrics)
+sensitivity = confusion.matrix1[2,2]/(confusion.matrix1[2,1] + confusion.matrix1[2,2])
+specificity = confusion.matrix1[1,1]/(confusion.matrix1[1,1] + confusion.matrix1[1,2])
+accuracy_old = mean(round(pld_old) == ilt$Dataset)
+root_mean_square_old = rmse(ilt$Dataset, round(pld_old))
+nll_old = negative.log.likelihood(pld_old, ilt$Dataset)
+cat("--------------- Previous model with complete features-------------------")
+cat("\n")
+cat("Sensitivity of test data with old model:\t", sensitivity)
+cat("\n")
+cat("Specificity of test data with old model:\t", specificity)
+cat("\n")
+cat("Accuracy of test data with old model:\t\t", accuracy_old)
+cat("\n")
+cat("RMSE test data with old model:\t\t\t", root_mean_square_old)
+cat("\n")
+cat("Negative Log Likelihood test data with old model :", nll_old)
+cat("\n")
+
+sensitivity = confusion.matrix2[2,2]/(confusion.matrix2[2,1] + confusion.matrix2[2,2])
+specificity = confusion.matrix1[1,1]/(confusion.matrix2[1,1] + confusion.matrix2[1,2])
+accuracy_new = mean(round(pld_new) == ilt$Dataset)
+root_mean_square_new = rmse(ilt$Dataset, round(pld_new))
+nll_new = negative.log.likelihood(pld_new, ilt$Dataset)
+cat("\n")
+cat("--------------- New model with selected features-------------------")
+cat("\n")
+cat("Sensitivity of test data with new model\t\t", sensitivity)
+cat("\n")
+cat("Specificity of test data with new model\t\t", specificity)
+cat("\n")
+cat("Accuracy of test data with new model\t\t", accuracy_new)
+cat("\n")
+cat("RMSE test data with old model:\t\t\t", root_mean_square_new)
+cat("\n")
+cat("Negative Log Likelihood test data with old model :", nll_new)
+cat("\n")
+
+```
+
+After backward selection:
+  * Sensitivity increased
+  * Specificity constant
+  * Accuracy increased
+  * RMSE decreased
+  * Negative log likelihood has increased
+
+Conclusion:
+  * On checking the accuracy, the model performs quite well
+  * Good at identifying people with liver disease
+  * Bad at correctly identifying those without disease
+  * Good for catching actual cases of the disease but they also come with a fairly high rate of false positives
+  * The negativelog-likelihood and the MSE will be lower if the model is better at aligning probability predictions with the truth.Here negative log likelihood has increased which is not good.
+  * Also in both the model, the false negative value after the stepwise regression  shows no improvement
+  
+  Considering all these we can say that the new model does not work properly. This can be because of inter dependent features which we did not consider while initial model creation
+
+
+```{r}
+N <- nrow(ilt)
+rowsums = apply(confusion.matrix2, 1, sum)	# number of observations per class
+colsums = apply(confusion.matrix2, 2, sum)	# number of predictions per class
+Actual.Dist = rowsums / N					# distribution of observations over the actual classes
+Predicted.Dist= colsums / N					# distribution of observations over the predicted classes
+round(data.frame(Actual.Dist,Predicted.Dist)*100,2)
+
+```
+
+Precision is defined as the fraction of correct predictions for a certain class, whereas recall is the fraction of instances of a class that were correctly predicted.
+
+
+## 4 Linear Regression
+
+### 4.1 Run lm() on data.
+
+```{r}
+fit_3 <- lm(Total_Proteins ~ ., data=il)
+summary(fit_3)
+```
+
+The summary function for the lm model object returns Residuals, Coefficients, Residual standard error, Multiple R square, Adjusted R square.
+
+Deviance Residual gives the information on how deviated the truth value is from the predicted value. We also get information of min, max, 1st quartile and 3rd quartlie ranges for the residuals. Since the median value is near to 0 ,i.e, 0.4 we can say that residual is normally distributed around 0. 1Q = -1.0213 and 3Q = 0.8796. Since the range 3Q - 1Q is very less the ditribution is nearly symmetrical as well. 
+
+Second part of the summary returns coefficients which have 5 columns.
+  * Column name : Names of all the columns
+  * Estimated coefficients : This column represents the intercept of the regression line (B0)
+  * Std. Error : 
+  * t value : t-values are used to calculate p-values.
+  * Pr(>|z|) : Pr value represent the probability for which the null hypothesis is true. This is used as an alternative of rejection points for the smallest level of significance.In the given summary lowest p values are present for Alamine_Aminotransferase, Aspartate_Aminotransferase, Albumin and Albumin_and_Globulin_Ratio. So these features will be significant for the selection of Dataset column
+  * last column is the visualization of the importance of a variable. 3 * with high importance followed by 2 and 1.
+
+  * Residual standard error :  standard deviation of the residuals which for a good fit should be proportional to the quantiles of the residuals in part one
+  * Degree of freedom : Number of observation - No of columns
+  * Multiple R square: Show the goodness of fit. Calculated as (1-RSS/TSS) This is not a good metric for multiple regression as R square value increases as more features are added in the model
+  * Adjusted R: The adjusted R squared increases only if the new term improves the model more than would be expected by chance
+
+Calculation of p-value :  If the model with more parameters doesn't perform better than the model with fewer parameters, then the F-test will have a high p-value
+The smaller the p-value, the stronger the evidence that the null hypthesis does not hold -- i.e. that  is not equal to k
+
+
+### 4.2 Run lm() on data. 
+
+Using predict function to predict the values with linear model(fit_3) created earlier. We can see that the predcited values and truth values properly align in a straight line. So the model looks fine
+
+```{r}
+
+predict.Total_Protiens <- predict(fit_3, type = "response")
+x <- seq(0:394)
+y1 <- il$Total_Proteins
+y2 <- predict.Total_Protiens
+df <- data.frame(x,y1,y2)
+ggplot(df, aes(y1, y2)) +                    # basic graphical object
+  geom_point(aes(y1), colour="green")+# first layer
+  xlab("Truth Value") +
+  ylab("Predicted value") +
+  ggtitle("Truth vs Predicted - Total Protiens") +
+  theme_dark()
+```
+
+### 4.3 Single variable model
+
+There are multiple approaches to select the best single predictor.
+
+  * First approach is to use correlation matrix. This matrix prints all the columns against all other columns and the correlation among each other. Columns with higher correlation can be used for prediction. 
+
+```{r}
+cor(il[,c(1,3,4,5,6,7,8,9,10,11)])
+```
+
+  * In the second approach we can see the pr values in the summary for model. The feature with the least pr value will be significant to predict the other column
+  
+```{r}
+sum.fit <- summary(fit_3)
+coef(sum.fit)
+```
+
+Here to predict Total_Protien since Pr for Albumin is less than Pr value for Albumin_and_Globulin_Ratio, so Albumin will be the best single predictor. We can also cross check using the correlation matrix.
+
+
+### 4.4 Stepwise regression with forwards selection
+
+Stepwise regression with forward selection is a technique in which choice of predictive features is carried out by automatic procedure comparing certain criteria of diagnostics like p-value, AIC, AdjustedRSquare.
+
+The following code is an implementation of step function (Function in R which is used for the above mentioned purpose) in which we start with the complete model.
+Since complete model is not just all the predictive features, we can also consider inter dependency of features like a + b or ab etc. So the full model will consider all possibilities.
+In out implementation we will only consider all the columns in the dataset for the inital model.
+
+
+Algorithm for implementation of forward step function:
+
+  * Start with the an null model
+  * Start a loop and iterate through each of the column values.
+  * IF on adding that column value, the over all adjustedRSquared value increases, keep it
+  * return the var name for which the current model has best adjusted Rsquare value.
+  * Remove the var from predictor list and add that to the model
+  * Continue till the length of predictor set is null
+  * Finally we will get a model with highest adjustedRsquared value
+  
+```{r}
+
+# here is a DUMMY random function to select a feature to add
+# => you should write a better one!
+
+selectAddVar <- function(fset, fit, sum.fit) {
+
+  # Storing the adjusted R2 of the input fit
+  adjRSq <- sum.fit$adj.r.squared
+  maxR <- 0
+  maxvar <- "STOP"
+# fset = the existing set of features to select from
+  if (length(fset)==0) {
+    return("STOP")
+  }
+  for ( var in fset ) {
+    if ( startsWith(var, "(Inter") ){
+      next
+    }
+    
+
+  # Get the existing column names in the building model
+    a <- attr(coef(sum.fit), "dimnames")[[1]]
+    a <- a[a!="(Intercept)"] # Intercept will get added each time, need to remove
+    a <- gsub("GenderMale", "Gender", a) # Substitude GenderMale with Gender
+    fit.test <- lm(paste("Total_Proteins ~ ", paste(append(a,var),collapse="+")), data=il) # Performing lm for each variable
+    sum.test <- summary(fit.test) 
+    if (sum.test$adj.r.squared > adjRSq){
+      maxR <- sum.test$adj.r.squared # Replace with the existing adj R squared if value is greater
+      maxvar <- var 
+    }
+    
+  }
+#your method to select the best feature here
+return(maxvar)
+}
+
+```
+
+
+
+```{r}
+
+# this is the active predictor list
+nil <- names(il)
+# delete the target variables from set
+nil <- nil[(!nil=="Total_Proteins")]
+print(paste("STARTING: ", paste(nil,collapse="+")))
+# start with the empty set of features for lm()
+fset <- 1
+# now run with initial list
+fit <- lm(paste("Total_Proteins ~ ",paste(fset,collapse="+")), data=il)
+sum.fit <- summary(fit)
+
+for (loop in 1:10) {
+  
+  if ( length(nil)==0 ) {
+    # quit if none more to add
+    break
+  }
+  
+  #var is to be tested
+  var <- selectAddVar(nil,fit,sum.fit)
+  
+  if ( var == "STOP") {
+  # quit as told to stop
+  break
+  }
+  # remove from list
+  nil <- nil[!nil==var]
+  fset <- append(fset,var)
+  print(paste("ADDED: ", var))
+  print("----------------------------------------------------------" )
+  # report
+  print(paste("RUNNING: ", paste(fset,collapse="+")))
+  # now run with modified list
+  fit <- lm(paste("Total_Proteins ~ ",paste(fset,collapse="+")), data=il)
+  sum.fit <- summary(fit)
+  print(paste("LM Rsquared out: ", sum.fit$r.squared))
+}
+# report the final fit
+summary(fit)
+```
+
+### 4.5Analysis and Discussion
+
+Initial model columns:
+
+```{r}
+# Old model
+attr(coef(summary(fit_3)),"dimnames")[[1]]
+```
+
+Final model columns after :
+
+```{r}
+# Old model
+attr(coef(summary(fit)),"dimnames")[[1]]
+```
+
+Using the model to predict the test data values.
+
+```{r}
+pld_train <- predict(fit, il, type="response")
+# Predicting the test data with model (old and new)
+pld_old <- predict(fit_3, ilt, type="response")
+pld_new <- predict(fit, ilt, type = "response")
+```
+
+```{r}
+hist(fit$residuals,								# draw the histogram of residuals
+     breaks = 50,									# number of breaks
+     main = 'Histogram and Density of Residuals',	# main title
+     xlab='Residuals',								# x-axis label
+     col= 'green',
+     probability=TRUE) # scale it to [0,1]. otherwise we cann't plot density curve of top of it
+
+lines(density(fit$residuals),						# draw density curve of residuals
+      col = 'red'									# color it as red
+     )
+```
+
+On plotting the histogram and density graph, we can see that the distribution follows a uniform distribution. 
+
+```{r}
+y1 <- pld_train
+y2 <- fit$residuals
+df <- data.frame(y1,y2)
+ggplot(df, aes(y1,y2)) +                    # basic graphical object
+  geom_point(aes(y1), colour="green")+# first layer
+  xlab("Fitted values") +
+  ylab("Residuals") +
+  ggtitle("  ") +
+  theme_dark()
+```
+
+The Residuals versus Fitted plot is typically used to illustrate a model if it is linear. A horizontal trend line in the plot indicates a linear pattern between response and predictors. For a good fit, we are looking for a residuals almost evenly distributed around zero line without any visible pattern
+
+
+```{r}
+library(Metrics)
+
+root_mean_square_old = rmse(ilt$Total_Proteins, pld_old)
+cat("--------------- Previous model with complete features-------------------")
+cat("\n")
+cat("RMSE test data with old model:\t\t\t", root_mean_square_old)
+rmse = mean((ilt$Total_Proteins - pld_old)^2)
+cat("\n")
+cat(rmse)
+cat("\n")
+
+root_mean_square_new = rmse(ilt$Total_Proteins, pld_new)
+cat("\n")
+cat("--------------- New model with selected features-------------------")
+cat("\n")
+cat("RMSE test data with old model:\t\t\t", root_mean_square_new)
+cat("\n")
+rmse = mean((ilt$Total_Proteins - pld_new)^2)
+cat(rmse)
+cat("\n")
+
+```
+
+Here we can see that from the above plots the model looks good for a linear fit. Also Residual Mean Square Error decreases so we can conclude that model is a good fit.
+
+

@@ -1,0 +1,4 @@
+"0","wei <- rweibull(10, 0.7, scale = 1) "
+"0","optimize(wei, c(0.5,2), maximum = TRUE)"
+"2","Error in f(arg, ...) : could not find function ""f""
+"
